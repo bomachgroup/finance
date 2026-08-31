@@ -1,0 +1,21 @@
+/* Finance OS Styling & Utilities matching Marketing */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #D3D7E1;
+  border-radius: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #8B90A5;
+}
+
+/* Tooltips */
+.tooltip-container:hover .tooltip-box {
+  opacity: 1;
+  pointer-events: auto;
+}

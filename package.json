@@ -1,0 +1,32 @@
+{
+  "name": "bomach-finance-os",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "vite build",
+    "preview": "vite preview --host 127.0.0.1",
+    "typecheck": "tsc -b",
+    "lint": "oxlint src vite.config.ts tailwind.config.ts",
+    "test": "node tools/finance-smoke.mjs"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "^5.101.4",
+    "@tanstack/react-router": "^1.170.27",
+    "iconsax-react": "^0.0.8",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "react-loading-skeleton": "^3.5.0"
+  },
+  "devDependencies": {
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "@vitejs/plugin-react": "latest",
+    "autoprefixer": "latest",
+    "oxlint": "latest",
+    "postcss": "latest",
+    "tailwindcss": "^3.4.17",
+    "typescript": "latest",
+    "vite": "latest"
+  }
+}

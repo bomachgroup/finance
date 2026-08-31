@@ -1,0 +1,36 @@
+# Dependencies and package-manager output
+node_modules/
+/.pnp/
+.pnp.*
+
+# Build and test output
+dist/
+coverage/
+playwright-report/
+test-results/
+.vite/
+*.tsbuildinfo
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+
+# Local tooling and editor files
+.vercel/
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Logs, temporary files, screenshots, and local review artifacts
+*.log
+*.tmp
+*.temp
+tools/*.png
+.docx_review/
+.docx_review_weekly_plan/
+scratch/
+
+# Non-source documents kept outside the repository
+*.docx
