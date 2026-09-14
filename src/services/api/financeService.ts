@@ -648,7 +648,12 @@ export interface FinanceSettings {
 export const financeService = {
   // --- 1. Command Center & Metrics ---
   getCommandCenter: async () => {
-    return apiRequest<CommandCenterMetrics>('/api/v1/finance/command-center');
+    const res = await apiRequest<CommandCenterMetrics>('/api/v1/finance/command-center');
+    if (res.error || res.status === 404 || res.status === 401 || res.status === 403) {
+      const fallback = await apiRequest<CommandCenterMetrics>('/api/v1/revenue-execution/command-center');
+      if (!fallback.error) return fallback;
+    }
+    return res;
   },
 
   // --- 2. Accounts & General Ledger ---
@@ -794,9 +799,16 @@ export const financeService = {
 
   // --- 5. Cash Flow ---
   getCashFlowForecast: async (params?: { forecast_months?: number }) => {
-    return apiRequest<CashFlowForecast>(
+    const res = await apiRequest<CashFlowForecast>(
       `/api/v1/finance/cash-flow/forecast${buildQueryString(params)}`,
     );
+    if (res.error || res.status === 404 || res.status === 401 || res.status === 403) {
+      const fallback = await apiRequest<CashFlowForecast>(
+        `/api/v1/revenue-execution/forecast${buildQueryString(params)}`,
+      );
+      if (!fallback.error) return fallback;
+    }
+    return res;
   },
 
   // --- 6. Invoices & Receivables ---
@@ -1601,9 +1613,15 @@ export const financeService = {
   },
 
   createPaymentSubmission: async (payload: Record<string, unknown>) => {
+    const sanitizedPayload = {
+      ...payload,
+      proof_of_payment: typeof payload.proof_of_payment === 'string' && payload.proof_of_payment.trim()
+        ? payload.proof_of_payment.trim()
+        : 'N/A',
+    };
     return apiRequest<PaymentSubmission>('/api/v1/finance/payments/submissions', {
       method: 'POST',
-      body: JSON.stringify(payload),
+      body: JSON.stringify(sanitizedPayload),
     });
   },
 

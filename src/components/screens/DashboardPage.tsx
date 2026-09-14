@@ -56,13 +56,15 @@ export const DashboardPage: FC = () => {
   const totalRevenue = summary.total_revenue !== undefined ? Number(summary.total_revenue) : totalInvoicesSum;
   const totalExpenses = summary.total_expenses !== undefined ? Number(summary.total_expenses) : totalExpensesSum;
   const netProfit = summary.net_profit !== undefined ? Number(summary.net_profit) : calculatedNet;
-  const dashboardError = [
-    summaryRes?.error,
-    invoicesRes?.error,
-    expensesRes?.error,
-    accountsRes?.error,
-    forecastRes?.error,
-  ].find((error): error is string => Boolean(error));
+  // Only display a global error banner if core financial data (invoices and expenses) could not be loaded at all
+  // and there is no data to display (e.g. invalid session, network offline).
+  // Supplementary metrics (pre-aggregated command center summary, cash flow forecast) have graceful fallbacks
+  // and in-widget states.
+  const hasCoreData = invoices.length > 0 || expenses.length > 0 || accounts.length > 0;
+  const dashboardError =
+    !hasCoreData && (invoicesRes?.error || expensesRes?.error)
+      ? invoicesRes?.error || expensesRes?.error
+      : undefined;
 
   return (
     <div className="space-y-6 p-4 sm:p-6 max-w-7xl mx-auto">

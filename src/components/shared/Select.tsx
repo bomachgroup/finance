@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, type FC } from 'react';
+import { useState, useRef, useEffect, type FC, type ReactNode } from 'react';
 import { formatDisplayLabel } from '../../data/helpers';
 import { AppIcon } from './AppIcon';
 
@@ -19,7 +19,7 @@ export interface SelectProps {
   disabled?: boolean;
   prefixIcon?: string;
   fullWidth?: boolean;
-  label?: string;
+  label?: ReactNode;
 }
 
 export const Select: FC<SelectProps> = ({

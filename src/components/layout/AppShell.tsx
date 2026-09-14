@@ -129,8 +129,24 @@ export const AppShell: FC<{ children?: ReactNode }> = ({ children }) => {
   }
 
   const handleCreateExpense = async () => {
-    if (!expenseForm.category || !expenseForm.finance_account_id || !expenseForm.amount || !expenseForm.beneficiary || !expenseForm.purpose) {
-      showToast('Please fill in all required expense fields', 'error');
+    if (!expenseForm.finance_account_id) {
+      showToast('Please select a finance account', 'error');
+      return;
+    }
+    if (!expenseForm.category?.trim()) {
+      showToast('Please specify an expense category', 'error');
+      return;
+    }
+    if (!expenseForm.beneficiary?.trim()) {
+      showToast('Please enter the beneficiary name', 'error');
+      return;
+    }
+    if (!expenseForm.amount || Number(expenseForm.amount) <= 0) {
+      showToast('Please enter a valid expense amount', 'error');
+      return;
+    }
+    if (!expenseForm.purpose?.trim()) {
+      showToast('Please provide a description or purpose for the expenditure', 'error');
       return;
     }
 
@@ -169,13 +185,23 @@ export const AppShell: FC<{ children?: ReactNode }> = ({ children }) => {
   };
 
   const handleRecordPayment = async () => {
-    if (!paymentForm.amount || !paymentForm.payment_reference || !paymentForm.payment_date || !paymentForm.proof_of_payment) {
-      showToast('Please specify amount, payment date, transaction reference, and proof of payment', 'error');
+    if (!paymentForm.invoice_id || !paymentForm.finance_account_id) {
+      showToast('Select an invoice and target finance account before recording payment', 'error');
       return;
     }
 
-    if (!paymentForm.invoice_id || !paymentForm.finance_account_id) {
-      showToast('Select an invoice and finance account before recording payment', 'error');
+    if (!paymentForm.amount || Number(paymentForm.amount) <= 0) {
+      showToast('Please specify a valid payment amount', 'error');
+      return;
+    }
+
+    if (!paymentForm.payment_reference?.trim()) {
+      showToast('Please enter a bank reference or payment narration', 'error');
+      return;
+    }
+
+    if (!paymentForm.payment_date) {
+      showToast('Please specify the payment date', 'error');
       return;
     }
 
@@ -185,11 +211,11 @@ export const AppShell: FC<{ children?: ReactNode }> = ({ children }) => {
         invoice_id: Number(paymentForm.invoice_id),
         finance_account_id: Number(paymentForm.finance_account_id),
         amount: Number(paymentForm.amount),
-        transaction_reference: paymentForm.payment_reference,
+        transaction_reference: paymentForm.payment_reference.trim(),
         payment_method: paymentForm.payment_method,
         payment_date: paymentForm.payment_date,
-        proof_of_payment: paymentForm.proof_of_payment,
-        notes: paymentForm.client_name ? `Client / depositor: ${paymentForm.client_name}` : undefined,
+        proof_of_payment: paymentForm.proof_of_payment?.trim() || 'N/A',
+        notes: paymentForm.client_name ? `Client / depositor: ${paymentForm.client_name.trim()}` : undefined,
       });
 
       if (res.error) {
@@ -271,7 +297,9 @@ export const AppShell: FC<{ children?: ReactNode }> = ({ children }) => {
         <div className="space-y-3.5">
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-text mb-1">Expense Date</label>
+              <label className="block text-xs font-semibold text-text mb-1">
+                Expense Date <span className="text-red-500">*</span>
+              </label>
               <input
                 type="date"
                 value={expenseForm.date}
@@ -280,7 +308,9 @@ export const AppShell: FC<{ children?: ReactNode }> = ({ children }) => {
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-text mb-1">Expense Type</label>
+              <label className="block text-xs font-semibold text-text mb-1">
+                Expense Type <span className="text-red-500">*</span>
+              </label>
               <select
                 value={expenseForm.cost_type}
                 onChange={(e) => setExpenseForm((p) => ({ ...p, cost_type: e.target.value }))}
@@ -294,7 +324,9 @@ export const AppShell: FC<{ children?: ReactNode }> = ({ children }) => {
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-text mb-1">Category</label>
+              <label className="block text-xs font-semibold text-text mb-1">
+                Category <span className="text-red-500">*</span>
+              </label>
               <input
                 type="text"
                 value={expenseForm.category}
@@ -304,7 +336,9 @@ export const AppShell: FC<{ children?: ReactNode }> = ({ children }) => {
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-text mb-1">Finance Account</label>
+              <label className="block text-xs font-semibold text-text mb-1">
+                Finance Account <span className="text-red-500">*</span>
+              </label>
               <select
                 value={expenseForm.finance_account_id}
                 onChange={(e) => setExpenseForm((p) => ({ ...p, finance_account_id: e.target.value }))}
@@ -321,7 +355,9 @@ export const AppShell: FC<{ children?: ReactNode }> = ({ children }) => {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-text mb-1">Beneficiary Name</label>
+            <label className="block text-xs font-semibold text-text mb-1">
+              Beneficiary Name <span className="text-red-500">*</span>
+            </label>
             <input
               type="text"
               value={expenseForm.beneficiary}
@@ -332,7 +368,9 @@ export const AppShell: FC<{ children?: ReactNode }> = ({ children }) => {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-text mb-1">Amount (₦)</label>
+            <label className="block text-xs font-semibold text-text mb-1">
+              Amount (₦) <span className="text-red-500">*</span>
+            </label>
             <input
               type="number"
               value={expenseForm.amount}
@@ -343,7 +381,9 @@ export const AppShell: FC<{ children?: ReactNode }> = ({ children }) => {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-text mb-1">Purpose / Description</label>
+            <label className="block text-xs font-semibold text-text mb-1">
+              Purpose / Description <span className="text-red-500">*</span>
+            </label>
             <textarea
               value={expenseForm.purpose}
               onChange={(e) => setExpenseForm((p) => ({ ...p, purpose: e.target.value }))}
@@ -375,7 +415,9 @@ export const AppShell: FC<{ children?: ReactNode }> = ({ children }) => {
         <div className="space-y-3.5">
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-text mb-1">Invoice Linked</label>
+              <label className="block text-xs font-semibold text-text mb-1">
+                Invoice Linked <span className="text-red-500">*</span>
+              </label>
               <select
                 value={paymentForm.invoice_id}
                 onChange={(e) => setPaymentForm((p) => ({ ...p, invoice_id: e.target.value }))}
@@ -390,7 +432,9 @@ export const AppShell: FC<{ children?: ReactNode }> = ({ children }) => {
               </select>
             </div>
             <div>
-              <label className="block text-xs font-semibold text-text mb-1">Target Account</label>
+              <label className="block text-xs font-semibold text-text mb-1">
+                Target Account <span className="text-red-500">*</span>
+              </label>
               <select
                 value={paymentForm.finance_account_id}
                 onChange={(e) => setPaymentForm((p) => ({ ...p, finance_account_id: e.target.value }))}
@@ -407,7 +451,9 @@ export const AppShell: FC<{ children?: ReactNode }> = ({ children }) => {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-text mb-1">Client / Depositor Name</label>
+            <label className="block text-xs font-semibold text-text mb-1">
+              Client / Depositor Name <span className="text-text-3 font-normal text-[11px]">(optional)</span>
+            </label>
             <input
               type="text"
               value={paymentForm.client_name}
@@ -419,7 +465,9 @@ export const AppShell: FC<{ children?: ReactNode }> = ({ children }) => {
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-text mb-1">Amount (₦)</label>
+              <label className="block text-xs font-semibold text-text mb-1">
+                Amount (₦) <span className="text-red-500">*</span>
+              </label>
               <input
                 type="number"
                 value={paymentForm.amount}
@@ -429,7 +477,9 @@ export const AppShell: FC<{ children?: ReactNode }> = ({ children }) => {
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-text mb-1">Method</label>
+              <label className="block text-xs font-semibold text-text mb-1">
+                Method <span className="text-red-500">*</span>
+              </label>
               <select
                 value={paymentForm.payment_method}
                 onChange={(e) => setPaymentForm((p) => ({ ...p, payment_method: e.target.value }))}
@@ -444,7 +494,9 @@ export const AppShell: FC<{ children?: ReactNode }> = ({ children }) => {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-text mb-1">Bank Reference / Narration</label>
+            <label className="block text-xs font-semibold text-text mb-1">
+              Bank Reference / Narration <span className="text-red-500">*</span>
+            </label>
             <input
               type="text"
               value={paymentForm.payment_reference}
@@ -456,11 +508,15 @@ export const AppShell: FC<{ children?: ReactNode }> = ({ children }) => {
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-text mb-1">Payment Date</label>
+              <label className="block text-xs font-semibold text-text mb-1">
+                Payment Date <span className="text-red-500">*</span>
+              </label>
               <input type="date" value={paymentForm.payment_date} onChange={(e) => setPaymentForm((p) => ({ ...p, payment_date: e.target.value }))} className="h-9 w-full rounded-xl border border-border bg-surface px-3 text-xs text-text outline-none focus:border-navy focus:ring-1 focus:ring-navy" />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-text mb-1">Proof of Payment URL</label>
+              <label className="block text-xs font-semibold text-text mb-1">
+                Proof of Payment URL <span className="text-text-3 font-normal text-[11px]">(optional)</span>
+              </label>
               <input type="url" value={paymentForm.proof_of_payment} onChange={(e) => setPaymentForm((p) => ({ ...p, proof_of_payment: e.target.value }))} placeholder="https://..." className="h-9 w-full rounded-xl border border-border bg-surface px-3 text-xs text-text outline-none focus:border-navy focus:ring-1 focus:ring-navy" />
             </div>
           </div>

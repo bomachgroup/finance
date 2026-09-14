@@ -89,16 +89,53 @@ export const PettyCashPage: FC = () => {
         onClose={() => setCreateOpen(false)}
         title="Create Petty Cash Advance"
         fields={[
-          { name: 'finance_account_id', label: 'Finance account', type: 'select', required: true, options: accounts.filter((account) => account.id).map((account) => ({ value: String(account.id), label: String(account.name || account.display_name || account.id) })) },
-          { name: 'purpose', label: 'Purpose', required: true, type: 'textarea' },
-          { name: 'amount_requested', label: 'Amount requested', required: true, type: 'number' },
+          {
+            name: 'finance_account_id',
+            label: 'Finance account',
+            type: 'select',
+            required: true,
+            options: accounts
+              .filter((account) => account.id)
+              .sort((a, b) => {
+                const aIsCash = String(a.account_type || '').toLowerCase() === 'cash' ? 1 : 0;
+                const bIsCash = String(b.account_type || '').toLowerCase() === 'cash' ? 1 : 0;
+                return bIsCash - aIsCash;
+              })
+              .map((account) => {
+                const type = formatDisplayLabel(account.account_type || account.type || 'account');
+                const bal =
+                  account.balance !== undefined || account.current_balance !== undefined
+                    ? ` — ₦${Number(account.balance || account.current_balance || 0).toLocaleString('en-NG')}`
+                    : '';
+                return {
+                  value: String(account.id),
+                  label: `${String(account.name || account.display_name || account.id)} (${type})${bal}`,
+                };
+              }),
+            helperText: 'Must be an active cash/disbursement account belonging to your branch.',
+          },
+          { name: 'purpose', label: 'Purpose', required: true, type: 'textarea', placeholder: 'Reason for cash float or requisition' },
+          { name: 'amount_requested', label: 'Amount requested (₦)', required: true, type: 'number', placeholder: '0.00' },
           { name: 'due_date', label: 'Retirement due date', required: true, type: 'date' },
-          { name: 'notes', label: 'Notes', type: 'textarea' },
+          { name: 'notes', label: 'Notes', type: 'textarea', placeholder: 'Additional details or memo' },
         ]}
         onSubmit={async (values) => {
-          const response = await financeService.createPettyCashAdvance({ finance_account_id: Number(values.finance_account_id), purpose: values.purpose, amount_requested: Number(values.amount_requested), due_date: values.due_date, notes: values.notes || undefined });
-          if (!response.error) await queryClient.invalidateQueries({ queryKey: ['finance', 'petty-cash-advances'] });
-          return { error: response.error };
+          const response = await financeService.createPettyCashAdvance({
+            finance_account_id: Number(values.finance_account_id),
+            purpose: values.purpose,
+            amount_requested: Number(values.amount_requested),
+            due_date: values.due_date,
+            notes: values.notes || undefined,
+          });
+          if (response.error) {
+            if (response.error.includes('No FinanceAccount matches the given query')) {
+              return {
+                error: 'The selected account cannot disburse petty cash. Please ensure you choose an active Cash account in your branch.',
+              };
+            }
+            return { error: response.error };
+          }
+          await queryClient.invalidateQueries({ queryKey: ['finance', 'petty-cash-advances'] });
         }}
       />
     </div>

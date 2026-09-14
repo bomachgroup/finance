@@ -9,8 +9,9 @@ export type CreateField = {
   label: string;
   type?: 'text' | 'number' | 'date' | 'textarea' | 'select';
   required?: boolean;
-  options?: Array<{ value: string; label: string }>;
+  options?: Array<{ value: string; label: string }> | ((values: Record<string, string>) => Array<{ value: string; label: string }>);
   placeholder?: string;
+  helperText?: string | ((values: Record<string, string>) => string | undefined);
 };
 
 type Props = {
@@ -67,15 +68,40 @@ export const CreateRecordModal: FC<Props> = ({ open, title, subtitle, fields, on
         {fields.map((field) => {
           const common = {
             value: values[field.name] || '',
-            onChange: (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => setValues((current) => ({ ...current, [field.name]: event.target.value })),
+            onChange: (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
+              setValues((current) => ({ ...current, [field.name]: event.target.value })),
             required: field.required,
             placeholder: field.placeholder,
             className: 'mt-1 h-9 w-full rounded-lg border border-border bg-surface px-3 text-xs text-text outline-none focus:border-navy',
           };
+          const resolvedOptions = typeof field.options === 'function' ? field.options(values) : field.options;
+          const resolvedHelper = typeof field.helperText === 'function' ? field.helperText(values) : field.helperText;
+
           return (
             <label key={field.name} className={`text-xs font-semibold text-text ${field.type === 'textarea' ? 'sm:col-span-2' : ''}`}>
-              {field.label}
-              {field.type === 'textarea' ? <textarea {...common} className={`${common.className} h-20 py-2`} /> : field.type === 'select' ? <select {...common}><option value="">Select...</option>{field.options?.map((option) => <option key={option.value} value={option.value}>{formatDisplayLabel(option.label)}</option>)}</select> : <input {...common} type={field.type || 'text'} />}
+              <span className="flex items-center gap-1">
+                {field.label}
+                {field.required && <span className="text-red-500 font-bold">*</span>}
+              </span>
+              {field.type === 'textarea' ? (
+                <textarea {...common} className={`${common.className} h-20 py-2`} />
+              ) : field.type === 'select' ? (
+                <select {...common}>
+                  <option value="">Select...</option>
+                  {resolvedOptions?.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {formatDisplayLabel(option.label)}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <input {...common} type={field.type || 'text'} />
+              )}
+              {resolvedHelper && (
+                <span className="text-[11px] text-text-3 font-normal mt-1 block leading-tight">
+                  {resolvedHelper}
+                </span>
+              )}
             </label>
           );
         })}

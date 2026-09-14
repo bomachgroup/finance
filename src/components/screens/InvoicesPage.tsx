@@ -46,10 +46,24 @@ export const InvoicesPage: FC = () => {
   const services = extractApiItems<Record<string, any>>(servicesRes?.data);
 
   const handleCreate = async () => {
-    if (!form.client_id || !form.service_id || !form.total_amount || !form.description) {
-      showToast('Client, service, amount, and description are required', 'error');
+    if (!form.total_amount || Number(form.total_amount) <= 0) {
+      showToast('Please enter a valid invoice amount', 'error');
       return;
     }
+
+    if (!form.client_id) {
+      showToast('Please select a client record', 'error');
+      return;
+    }
+
+    if (!form.service_id) {
+      showToast('Please select a service record', 'error');
+      return;
+    }
+
+    const selectedService = services.find((s: any) => String(s.id) === String(form.service_id));
+    const serviceName = selectedService?.name || selectedService?.service_name || selectedService?.title;
+    const finalDescription = form.description.trim() || serviceName || 'Professional Services';
 
     setSubmitting(true);
     try {
@@ -61,16 +75,15 @@ export const InvoicesPage: FC = () => {
         subtotal: totalNum,
         issue_date: form.issue_date,
         due_date: form.due_date,
-        notes: form.description,
+        notes: finalDescription,
         items: [
           {
-            description: form.description,
+            description: finalDescription,
             quantity: 1,
             unit_price: totalNum,
           },
         ],
       });
-
 
       if (res.error) {
         showToast(res.error, 'error');
@@ -213,19 +226,25 @@ export const InvoicesPage: FC = () => {
       >
         <div className="space-y-3.5">
           <div>
-              <label className="block text-xs font-semibold text-text mb-1">Total Amount (₦)</label>
-              <input
-                type="number"
-                value={form.total_amount}
-                onChange={(e) => setForm((p) => ({ ...p, total_amount: e.target.value }))}
-                placeholder="0.00"
-                className="h-9 w-full rounded-xl border border-border bg-surface px-3 text-xs font-bold text-text outline-none focus:border-navy focus:ring-1 focus:ring-navy"
-              />
+            <label className="block text-xs font-semibold text-text mb-1">
+              Total Amount (₦) <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="number"
+              value={form.total_amount}
+              onChange={(e) => setForm((p) => ({ ...p, total_amount: e.target.value }))}
+              placeholder="0.00"
+              className="h-9 w-full rounded-xl border border-border bg-surface px-3 text-xs font-bold text-text outline-none focus:border-navy focus:ring-1 focus:ring-navy"
+            />
           </div>
 
           <div>
             <Select
-              label="Client record"
+              label={
+                <span>
+                  Client record <span className="text-red-500">*</span>
+                </span>
+              }
               options={clients.map((client: any) => ({ value: String(client.id), label: client.name || client.client_name || client.company_name || [client.first_name, client.last_name].filter(Boolean).join(' ') || String(client.id) }))}
               value={form.client_id}
               onChangeValue={(value) => {
@@ -239,7 +258,11 @@ export const InvoicesPage: FC = () => {
 
           <div>
             <Select
-              label="Service record"
+              label={
+                <span>
+                  Service record <span className="text-red-500">*</span>
+                </span>
+              }
               options={services.map((service: any) => ({ value: String(service.id), label: service.name || service.service_name || service.title || String(service.id) }))}
               value={form.service_id}
               onChangeValue={(value) => setForm((p) => ({ ...p, service_id: value }))}
@@ -251,7 +274,9 @@ export const InvoicesPage: FC = () => {
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-text mb-1">Issue Date</label>
+              <label className="block text-xs font-semibold text-text mb-1">
+                Issue Date <span className="text-red-500">*</span>
+              </label>
               <input
                 type="date"
                 value={form.issue_date}
@@ -260,7 +285,9 @@ export const InvoicesPage: FC = () => {
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-text mb-1">Due Date</label>
+              <label className="block text-xs font-semibold text-text mb-1">
+                Due Date <span className="text-red-500">*</span>
+              </label>
               <input
                 type="date"
                 value={form.due_date}
@@ -271,7 +298,9 @@ export const InvoicesPage: FC = () => {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-text mb-1">Description / Project Scope</label>
+            <label className="block text-xs font-semibold text-text mb-1">
+              Description / Project Scope <span className="text-text-3 font-normal text-[11px]">(optional - defaults to service)</span>
+            </label>
             <textarea
               value={form.description}
               onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))}

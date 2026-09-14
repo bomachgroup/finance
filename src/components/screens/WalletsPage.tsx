@@ -55,6 +55,22 @@ export const WalletsPage: FC = () => {
       ),
     },
   ];
+  const getOrderClientId = (order: Record<string, any>): number | null => {
+    const raw = order.client_id ?? order.customer_id ?? order.client?.id ?? order.owner_id;
+    const num = Number(raw);
+    return Number.isFinite(num) && num > 0 ? num : null;
+  };
+
+  const getOrderClientName = (order: Record<string, any>): string => {
+    return (
+      order.client_name ||
+      order.customer_name ||
+      order.client?.name ||
+      order.client?.company_name ||
+      [order.client?.first_name, order.client?.last_name].filter(Boolean).join(' ') ||
+      ''
+    );
+  };
 
   return (
     <div className="space-y-6 p-4 sm:p-6 max-w-7xl mx-auto">
@@ -86,22 +102,92 @@ export const WalletsPage: FC = () => {
         onClose={() => setCreateOpen(false)}
         title="Create Finance Wallet"
         fields={[
-          { name: 'client_id', label: 'Client', type: 'select', required: true, options: clients.filter((client) => client.id).map((client) => ({ value: String(client.id), label: String(client.name || client.company_name || [client.first_name, client.last_name].filter(Boolean).join(' ') || client.id) })) },
-          { name: 'wallet_type', label: 'Wallet type', type: 'select', required: true, options: [
-            { value: 'client', label: 'General Client Wallet' },
-            { value: 'project', label: 'Project Wallet' },
-            { value: 'property', label: 'Property Wallet' },
-            { value: 'restricted_project', label: 'Restricted Project Wallet' },
-          ] },
-          { name: 'service_order_id', label: 'Linked service order', type: 'select', options: orders.filter((order) => order.id).map((order) => ({ value: String(order.id), label: String(order.order_number || order.reference || `Order #${order.id}`) })) },
-          { name: 'name', label: 'Wallet name', required: true },
-          { name: 'purpose', label: 'Purpose', type: 'textarea' },
+          {
+            name: 'client_id',
+            label: 'Client',
+            type: 'select',
+            required: true,
+            options: clients
+              .filter((client) => client.id)
+              .map((client) => ({
+                value: String(client.id),
+                label: String(client.name || client.company_name || [client.first_name, client.last_name].filter(Boolean).join(' ') || `Client #${client.id}`),
+              })),
+          },
+          {
+            name: 'wallet_type',
+            label: 'Wallet type',
+            type: 'select',
+            required: true,
+            options: [
+              { value: 'client', label: 'General Client Wallet' },
+              { value: 'project', label: 'Project Wallet' },
+              { value: 'property', label: 'Property Wallet' },
+              { value: 'restricted_project', label: 'Restricted Project Wallet' },
+            ],
+            helperText: (values) =>
+              values.wallet_type === 'client'
+                ? 'General Client Wallets do not require a linked service order.'
+                : 'Project / property wallets require a linked service order belonging to the selected client.',
+          },
+          {
+            name: 'service_order_id',
+            label: 'Linked service order',
+            type: 'select',
+            options: (values) => {
+              const selectedClientId = values.client_id ? Number(values.client_id) : null;
+              const filteredOrders = orders.filter((order) => {
+                if (!order.id) return false;
+                if (!selectedClientId) return true;
+                const orderClientId = getOrderClientId(order);
+                return orderClientId === null || orderClientId === selectedClientId;
+              });
+
+              return filteredOrders.map((order) => {
+                const clientName = getOrderClientName(order);
+                const suffix = clientName ? ` (${clientName})` : '';
+                return {
+                  value: String(order.id),
+                  label: `${String(order.order_number || order.reference || `Order #${order.id}`)}${suffix}`,
+                };
+              });
+            },
+            helperText: (values) => {
+              if (values.wallet_type === 'client') {
+                return 'Optional: Leave unselected if this is a general-purpose wallet.';
+              }
+              return 'Required: Must be a service order belonging to the selected client.';
+            },
+          },
+          { name: 'name', label: 'Wallet name', required: true, placeholder: 'e.g. Escrow Account or Site Petty' },
+          { name: 'purpose', label: 'Purpose', type: 'textarea', placeholder: 'Brief explanation of how funds in this wallet will be used' },
         ]}
         onSubmit={async (values) => {
-          if (values.wallet_type !== 'client' && !values.service_order_id) {
-            return { error: 'Select a linked service order for this wallet type' };
+          const selectedClientId = Number(values.client_id);
+          const selectedOrderId = values.service_order_id ? Number(values.service_order_id) : undefined;
+
+          if (values.wallet_type !== 'client' && !selectedOrderId) {
+            return { error: 'Select a linked service order for this wallet type.' };
           }
-          const response = await financeService.createWallet({ client_id: Number(values.client_id), wallet_type: values.wallet_type, service_order_id: values.service_order_id ? Number(values.service_order_id) : undefined, name: values.name, purpose: values.purpose || undefined });
+
+          if (selectedOrderId) {
+            const linkedOrder = orders.find((o) => Number(o.id) === selectedOrderId);
+            const orderClientId = linkedOrder ? getOrderClientId(linkedOrder) : null;
+            if (orderClientId !== null && orderClientId !== selectedClientId) {
+              const orderClientName = linkedOrder ? getOrderClientName(linkedOrder) : '';
+              return {
+                error: `Service order client mismatch: Order #${linkedOrder?.order_number || selectedOrderId} belongs to a different client${orderClientName ? ` (${orderClientName})` : ''}. The wallet client must match the service order client.`,
+              };
+            }
+          }
+
+          const response = await financeService.createWallet({
+            client_id: selectedClientId,
+            wallet_type: values.wallet_type,
+            service_order_id: selectedOrderId,
+            name: values.name,
+            purpose: values.purpose || undefined,
+          });
           if (!response.error) await queryClient.invalidateQueries({ queryKey: ['finance', 'wallets'] });
           return { error: response.error };
         }}
