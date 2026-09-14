@@ -36,6 +36,14 @@ export function setApiBaseUrl(url: string) {
 }
 
 export function getApiBaseUrl(): string {
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname.toLowerCase();
+    // 1. On Vercel deployments, always use same-origin relative URLs so requests proxy through Vercel rewrites without CORS restrictions
+    if (hostname.includes('vercel.app')) {
+      return '';
+    }
+  }
+
   if (customApiBaseUrl) return customApiBaseUrl;
 
   if (typeof window !== 'undefined') {
@@ -45,13 +53,6 @@ export function getApiBaseUrl(): string {
       const clean = override.trim().replace(/\/+$/, '').replace(/\/api\/v1\/?$/, '');
       setApiBaseUrl(clean);
       return clean;
-    }
-
-    const hostname = window.location.hostname.toLowerCase();
-
-    // 1. On Vercel deployments, use same-origin relative URLs so requests proxy through Vercel rewrites without CORS restrictions
-    if (hostname.includes('vercel.app')) {
-      return '';
     }
 
     try {

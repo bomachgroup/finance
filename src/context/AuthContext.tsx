@@ -17,6 +17,7 @@ import {
   clearAccessToken,
   clearLegacyStoredTokens,
   clearRefreshToken,
+  getAccessToken,
   setAccessToken,
   setRefreshToken,
 } from '../services/api/authTokenStore';
@@ -259,6 +260,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Listen for auth token postMessage events (e.g. Flutter or iframe host)
   useEffect(() => {
+    let readyTimer: any = null;
+    if (typeof window !== 'undefined' && window.parent && window.parent !== window) {
+      const parentOrigin = document.referrer
+        ? (() => {
+            try {
+              const origin = new URL(document.referrer).origin;
+              return origin === 'null' ? '*' : origin;
+            } catch {
+              return '*';
+            }
+          })()
+        : '*';
+
+      let attempts = 0;
+      const announceReady = () => {
+        try {
+          window.parent.postMessage({ type: 'BOMACH_AUTH_READY' }, parentOrigin);
+          attempts += 1;
+        } catch {}
+      };
+
+      announceReady();
+      readyTimer = window.setInterval(() => {
+        if (attempts >= 12 || Boolean(getAccessToken())) {
+          clearInterval(readyTimer);
+          return;
+        }
+        announceReady();
+      }, 500);
+    }
+
     const handleMessage = async (event: MessageEvent) => {
       if (
         event.data &&
@@ -340,7 +372,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     window.addEventListener('message', handleMessage);
-    return () => window.removeEventListener('message', handleMessage);
+    return () => {
+      if (readyTimer) clearInterval(readyTimer);
+      window.removeEventListener('message', handleMessage);
+    };
   }, [fetchUserRoleAndPermissions]);
 
   const login = async (email: string, pass: string) => {
