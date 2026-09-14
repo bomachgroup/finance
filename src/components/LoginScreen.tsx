@@ -7,13 +7,14 @@ interface LoginScreenProps {
 }
 
 export function LoginScreen({ onSuccess }: LoginScreenProps) {
-  const { login, verify2FA, twoFactorToken, isLoading } = useAuth();
+  const { login, verify2FA, twoFactorToken } = useAuth();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [twoFactorCode, setTwoFactorCode] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleLogin = async (e: FormEvent) => {
     e.preventDefault();
@@ -24,11 +25,18 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
       return;
     }
 
-    const res = await login(email.trim(), password);
-    if (res.success) {
-      onSuccess?.();
-    } else if (res.error) {
-      setErrorMessage(parseApiError(res.error));
+    setIsSubmitting(true);
+    try {
+      const res = await login(email.trim(), password);
+      if (res.success) {
+        onSuccess?.();
+      } else if (res.error) {
+        setErrorMessage(parseApiError(res.error));
+      }
+    } catch (err) {
+      setErrorMessage(err instanceof Error ? err.message : 'Sign in failed. Please check your credentials and try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -41,11 +49,18 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
       return;
     }
 
-    const res = await verify2FA(twoFactorCode.trim());
-    if (res.success) {
-      onSuccess?.();
-    } else if (res.error) {
-      setErrorMessage(parseApiError(res.error));
+    setIsSubmitting(true);
+    try {
+      const res = await verify2FA(twoFactorCode.trim());
+      if (res.success) {
+        onSuccess?.();
+      } else if (res.error) {
+        setErrorMessage(parseApiError(res.error));
+      }
+    } catch (err) {
+      setErrorMessage(err instanceof Error ? err.message : '2FA verification failed.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -99,7 +114,7 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
               <input
                 type="text"
                 value={twoFactorCode}
-                disabled={isLoading}
+                disabled={isSubmitting}
                 onChange={(e) => setTwoFactorCode(e.target.value)}
                 placeholder="123456"
                 maxLength={6}
@@ -109,10 +124,10 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
 
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isSubmitting}
               className="w-full rounded-xl bg-navy py-2.5 text-xs font-bold text-white transition hover:bg-navy-dark disabled:opacity-50"
             >
-              {isLoading ? 'Verifying...' : 'Verify Code'}
+              {isSubmitting ? 'Verifying...' : 'Verify Code'}
             </button>
           </form>
         ) : (
@@ -124,7 +139,7 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
               <input
                 type="email"
                 value={email}
-                disabled={isLoading}
+                disabled={isSubmitting}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="finance@bomachgroup.com"
                 className="h-10 w-full rounded-xl border border-border bg-surface px-3 text-xs text-text outline-none placeholder:text-text-3 focus:border-navy focus:ring-1 focus:ring-navy disabled:opacity-60"
@@ -137,14 +152,14 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={password}
-                  disabled={isLoading}
+                  disabled={isSubmitting}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Password"
                   className="h-10 w-full rounded-xl border border-border bg-surface pl-3 pr-10 text-xs text-text outline-none placeholder:text-text-3 focus:border-navy focus:ring-1 focus:ring-navy disabled:opacity-60"
                 />
                 <button
                   type="button"
-                  disabled={isLoading}
+                  disabled={isSubmitting}
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute inset-y-0 right-0 flex items-center px-3 text-xs text-text-3 hover:text-text-2"
                 >
@@ -155,10 +170,10 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
 
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isSubmitting}
               className="flex w-full items-center justify-center gap-2 rounded-xl bg-navy py-2.5 text-xs font-bold text-white transition hover:bg-navy-dark disabled:opacity-50 active:scale-[0.98]"
             >
-              {isLoading ? 'Signing In...' : 'Sign In'}
+              {isSubmitting ? 'Signing In...' : 'Sign In'}
             </button>
           </form>
         )}

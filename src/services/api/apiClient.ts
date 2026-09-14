@@ -36,35 +36,32 @@ export function setApiBaseUrl(url: string) {
 }
 
 export function getApiBaseUrl(): string {
-  if (customApiBaseUrl) return customApiBaseUrl
+  if (customApiBaseUrl) return customApiBaseUrl;
 
   if (typeof window !== 'undefined') {
-    const searchParams = extractSearchParams()
-    const override = searchParams.get('apiBaseUrl') || searchParams.get('backendUrl') || searchParams.get('apiUrl')
+    const searchParams = extractSearchParams();
+    const override = searchParams.get('apiBaseUrl') || searchParams.get('backendUrl') || searchParams.get('apiUrl');
     if (override) {
-      const clean = override.trim().replace(/\/+$/, '').replace(/\/api\/v1\/?$/, '')
-      setApiBaseUrl(clean)
-      return clean
+      const clean = override.trim().replace(/\/+$/, '').replace(/\/api\/v1\/?$/, '');
+      setApiBaseUrl(clean);
+      return clean;
     }
-  }
 
-  const envUrl = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.trim()
-  if (envUrl) {
-    return envUrl.replace(/\/+$/, '')
-  }
+    const hostname = window.location.hostname.toLowerCase();
 
-  if (typeof window !== 'undefined') {
+    // 1. On Vercel deployments, use same-origin relative URLs so requests proxy through Vercel rewrites without CORS restrictions
+    if (hostname.includes('vercel.app')) {
+      return '';
+    }
+
     try {
-      const stored = sessionStorage.getItem('bomach_finances_api_base') || localStorage.getItem('bomach_finances_api_base')
-      if (stored) return stored.trim().replace(/\/+$/, '').replace(/\/api\/v1\/?$/, '')
+      const stored = sessionStorage.getItem('bomach_finances_api_base') || localStorage.getItem('bomach_finances_api_base');
+      if (stored) return stored.trim().replace(/\/+$/, '').replace(/\/api\/v1\/?$/, '');
     } catch {}
-  }
 
-  if (typeof window !== 'undefined') {
-    const hostname = window.location.hostname.toLowerCase()
-    const referrer = (document.referrer || '').toLowerCase()
+    const referrer = (document.referrer || '').toLowerCase();
 
-    // 1. Explicit test environments -> test backend
+    // 2. Explicit test environments -> test backend
     const isTestEnvironment =
       hostname.includes('bomach-os-test') ||
       hostname.includes('-test.web.app') ||
@@ -72,28 +69,33 @@ export function getApiBaseUrl(): string {
       hostname === 'localhost' ||
       hostname === '127.0.0.1' ||
       hostname === '[::1]' ||
-      hostname.endsWith('.local')
+      hostname.endsWith('.local');
 
     if (isTestEnvironment) {
-      return 'https://bomachauthtest.bgbot.app'
+      return 'https://bomachauthtest.bgbot.app';
     }
 
-    // 2. Production app environments
+    // 3. Production app environments
     const isProdAppEnvironment =
       hostname.includes('bomach-os-app') ||
       referrer.includes('bomach-os-app') ||
-      hostname === 'bomachauth.bgbot.app'
+      hostname === 'bomachauth.bgbot.app';
 
     if (isProdAppEnvironment) {
-      return 'https://bomachauth.bgbot.app'
+      return 'https://bomachauth.bgbot.app';
     }
   }
 
-  if (import.meta.env.DEV) {
-    return 'https://bomachauthtest.bgbot.app'
+  const envUrl = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.trim();
+  if (envUrl) {
+    return envUrl.replace(/\/+$/, '');
   }
 
-  return 'https://bomachauth.bgbot.app'
+  if (import.meta.env.DEV) {
+    return 'https://bomachauthtest.bgbot.app';
+  }
+
+  return 'https://bomachauthtest.bgbot.app';
 }
 
 export interface ApiResponse<T = unknown> {

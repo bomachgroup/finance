@@ -349,7 +349,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       'background: #1F3D7A; color: #fff; font-weight: bold; padding: 2px 5px; border-radius: 3px;',
       'color: #1F3D7A; font-weight: 600;',
     );
-    setIsLoading(true);
     try {
       const res = await authService.login({ email, password: pass });
 
@@ -362,11 +361,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           );
           const token = res.data.session_token || null;
           if (!token) {
-            setIsLoading(false);
             return { success: false, error: '2FA session token was not returned by server' };
           }
           setTwoFactorToken(token);
-          setIsLoading(false);
           return { success: false, requires2FA: true };
         }
 
@@ -385,7 +382,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (!meRes.data) {
             clearAccessToken();
             clearRefreshToken();
-            setIsLoading(false);
             return { success: false, error: meRes.error || 'Authenticated user profile was not returned by the backend' };
           }
           const profile: UserProfile = meRes.data;
@@ -393,17 +389,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUser(profile);
           setIsLoggedIn(true);
           await fetchUserRoleAndPermissions(profile);
-          setIsLoading(false);
           return { success: true };
         }
       }
 
       console.error('[Auth Login] Login failed:', res.error);
-      setIsLoading(false);
       return { success: false, error: res.error || 'Invalid login credentials' };
     } catch (err: unknown) {
       console.error('[Auth Login] Request exception:', err);
-      setIsLoading(false);
       return { success: false, error: err instanceof Error ? err.message : 'Login request failed' };
     }
   };
@@ -413,7 +406,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { success: false, error: 'No active 2FA session token found' };
     }
 
-    setIsLoading(true);
     try {
       const res = await authService.verify2FA({
         session_token: twoFactorToken,
@@ -431,7 +423,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (!meRes.data) {
           clearAccessToken();
           clearRefreshToken();
-          setIsLoading(false);
           return { success: false, error: meRes.error || 'Authenticated user profile was not returned by the backend' };
         }
         const profile: UserProfile = meRes.data;
@@ -439,14 +430,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(profile);
         setIsLoggedIn(true);
         await fetchUserRoleAndPermissions(profile);
-        setIsLoading(false);
         return { success: true };
       }
 
-      setIsLoading(false);
       return { success: false, error: res.error || 'Invalid verification code' };
     } catch (err: unknown) {
-      setIsLoading(false);
       return { success: false, error: err instanceof Error ? err.message : 'Verification failed' };
     }
   };
