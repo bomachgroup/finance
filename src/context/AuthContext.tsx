@@ -22,7 +22,7 @@ import {
   setRefreshToken,
 } from '../services/api/authTokenStore';
 import { extractSearchParams, setApiBaseUrl } from '../services/api/apiClient';
-import { SCREEN_TO_RESOURCE_MAP } from '../navigation';
+import { SCREEN_TO_RESOURCE_MAP, firstAccessibleScreen } from '../navigation';
 
 interface AuthContextValue {
   user: UserProfile | null;
@@ -34,6 +34,7 @@ interface AuthContextValue {
   isLoading: boolean;
   twoFactorToken: string | null;
   hasPermission: (resource: string, action?: string) => boolean;
+  getFirstAccessibleScreen: () => string;
   login: (
     email: string,
     pass: string,
@@ -511,9 +512,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const isSuperUser =
       (user as any)?.is_superuser === true ||
       (user as any)?.is_staff === true ||
-      currentRole === 'ceo' ||
-      currentRole === 'cfo' ||
-      currentRole === 'admin' ||
       Boolean(permissions['*']) ||
       Boolean(permissions.all) ||
       Boolean(permissions['all']) ||
@@ -566,6 +564,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return false;
   };
 
+  const getFirstAccessibleScreen = useCallback((): string => {
+    return firstAccessibleScreen(currentRole, permissions, hasPermission) || 'dashboard';
+  }, [currentRole, permissions, hasPermission]);
+
   return (
     <AuthContext.Provider
       value={{
@@ -578,6 +580,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isLoading,
         twoFactorToken,
         hasPermission,
+        getFirstAccessibleScreen,
         login,
         verify2FA,
         logout,

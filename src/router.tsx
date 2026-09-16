@@ -23,6 +23,7 @@ import { SettingsPage } from './components/screens/SettingsPage';
 import { TaxStatutoryPage } from './components/screens/TaxStatutoryPage';
 import { VendorsPage } from './components/screens/VendorsPage';
 import { WalletsPage } from './components/screens/WalletsPage';
+import { useAuth } from './context/AuthContext';
 
 const screenMap: Record<string, FC> = {
   dashboard: DashboardPage,
@@ -52,11 +53,19 @@ const screenMap: Record<string, FC> = {
 const rootRoute = createRootRoute({
   component: AppShell,
 });
+function IndexRedirect() {
+  const { isLoggedIn, getFirstAccessibleScreen } = useAuth();
+  if (!isLoggedIn) {
+    return <Navigate to="/$screenId" params={{ screenId: 'dashboard' }} replace />;
+  }
+  const target = getFirstAccessibleScreen();
+  return <Navigate to="/$screenId" params={{ screenId: target }} replace />;
+}
 
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/',
-  component: () => <Navigate to="/$screenId" params={{ screenId: 'dashboard' }} replace />,
+  component: IndexRedirect,
 });
 
 function ScreenDispatcher() {

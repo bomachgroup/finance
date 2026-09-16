@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Outlet, useLocation } from '@tanstack/react-router';
+import { Navigate, Outlet, useLocation } from '@tanstack/react-router';
 import { Suspense, useEffect, useRef, useState, type FC, type ReactNode } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useShell } from '../../context/ShellContext';
@@ -56,7 +56,7 @@ function AuthLoadingSkeleton() {
 }
 
 export const AppShell: FC<{ children?: ReactNode }> = ({ children }) => {
-  const { isLoggedIn, isLoading, hasPermission } = useAuth();
+  const { isLoggedIn, isLoading, hasPermission, getFirstAccessibleScreen } = useAuth();
   const { activeModal, closeModal, setMobileOpen } = useShell();
   const { showToast } = useToast();
   const queryClient = useQueryClient();
@@ -267,7 +267,12 @@ export const AppShell: FC<{ children?: ReactNode }> = ({ children }) => {
 
         <main ref={mainRef} className="flex-1 overflow-y-auto overflow-x-hidden">
           {!canAccess ? (
-            <NoPermissionPage screen={currentScreen} />
+            getFirstAccessibleScreen() !== currentScreen &&
+            hasPermission(getFirstAccessibleScreen(), 'view') ? (
+              <Navigate to="/$screenId" params={{ screenId: getFirstAccessibleScreen() }} replace />
+            ) : (
+              <NoPermissionPage screen={currentScreen} />
+            )
           ) : (
             <Suspense fallback={<AppRouteSkeleton />}>
               {children || <Outlet />}

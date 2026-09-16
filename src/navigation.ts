@@ -68,10 +68,9 @@ export function accessibleNavGroups(
   permissions: Record<string, string[]>,
   hasPermission: (resource: string, action?: string) => boolean,
 ): NavGroup[] {
-  const isSuperUser = Boolean(permissions['*'] || permissions.all || permissions['all']);
-  // Unknown backend role names may still have explicit screen permissions.
-  // Use the full catalog in that case, but keep every item permission-gated.
-  const sourceGroups = isSuperUser || !ROLES[roleKey] ? allRoleNavGroups() : ROLES[roleKey].nav;
+  // Purely permission-driven: evaluate every navigation item against
+  // the permissions fetched from the backend for this user.
+  const sourceGroups = allRoleNavGroups();
 
   const seenScreens = new Set<string>();
   const groups: NavGroup[] = [];
