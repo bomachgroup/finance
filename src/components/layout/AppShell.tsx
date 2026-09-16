@@ -12,6 +12,7 @@ import { LoginScreen } from '../LoginScreen';
 import { AppIcon } from '../shared/AppIcon';
 import { Button } from '../shared/Button';
 import { ModalDialog } from '../shared/ModalDialog';
+import { NumberInput } from '../shared/NumberInput';
 import { SkeletonCard, SkeletonKpiGrid, SkeletonTable } from '../shared/Skeletons';
 import { NoPermissionPage } from './NoPermissionPage';
 import { Sidebar } from './Sidebar';
@@ -141,7 +142,7 @@ export const AppShell: FC<{ children?: ReactNode }> = ({ children }) => {
       showToast('Please enter the beneficiary name', 'error');
       return;
     }
-    if (!expenseForm.amount || Number(expenseForm.amount) <= 0) {
+    if (!expenseForm.amount || Number(String(expenseForm.amount).replace(/,/g, '')) <= 0) {
       showToast('Please enter a valid expense amount', 'error');
       return;
     }
@@ -157,7 +158,7 @@ export const AppShell: FC<{ children?: ReactNode }> = ({ children }) => {
         category: expenseForm.category,
         cost_type: expenseForm.cost_type,
         finance_account_id: Number(expenseForm.finance_account_id),
-        amount: Number(expenseForm.amount),
+        amount: Number(String(expenseForm.amount).replace(/,/g, '')),
         beneficiary: expenseForm.beneficiary,
         description: expenseForm.purpose,
       });
@@ -190,7 +191,7 @@ export const AppShell: FC<{ children?: ReactNode }> = ({ children }) => {
       return;
     }
 
-    if (!paymentForm.amount || Number(paymentForm.amount) <= 0) {
+    if (!paymentForm.amount || Number(String(paymentForm.amount).replace(/,/g, '')) <= 0) {
       showToast('Please specify a valid payment amount', 'error');
       return;
     }
@@ -210,7 +211,7 @@ export const AppShell: FC<{ children?: ReactNode }> = ({ children }) => {
       const res = await financeService.createPaymentSubmission({
         invoice_id: Number(paymentForm.invoice_id),
         finance_account_id: Number(paymentForm.finance_account_id),
-        amount: Number(paymentForm.amount),
+        amount: Number(String(paymentForm.amount).replace(/,/g, '')),
         transaction_reference: paymentForm.payment_reference.trim(),
         payment_method: paymentForm.payment_method,
         payment_date: paymentForm.payment_date,
@@ -376,10 +377,9 @@ export const AppShell: FC<{ children?: ReactNode }> = ({ children }) => {
             <label className="block text-xs font-semibold text-text mb-1">
               Amount (₦) <span className="text-red-500">*</span>
             </label>
-            <input
-              type="number"
+            <NumberInput
               value={expenseForm.amount}
-              onChange={(e) => setExpenseForm((p) => ({ ...p, amount: e.target.value }))}
+              onChange={(value) => setExpenseForm((p) => ({ ...p, amount: value }))}
               placeholder="0.00"
               className="h-9 w-full rounded-xl border border-border bg-surface px-3 text-xs text-text outline-none focus:border-navy focus:ring-1 focus:ring-navy font-semibold"
             />
@@ -473,10 +473,9 @@ export const AppShell: FC<{ children?: ReactNode }> = ({ children }) => {
               <label className="block text-xs font-semibold text-text mb-1">
                 Amount (₦) <span className="text-red-500">*</span>
               </label>
-              <input
-                type="number"
+              <NumberInput
                 value={paymentForm.amount}
-                onChange={(e) => setPaymentForm((p) => ({ ...p, amount: e.target.value }))}
+                onChange={(value) => setPaymentForm((p) => ({ ...p, amount: value }))}
                 placeholder="0.00"
                 className="h-9 w-full rounded-xl border border-border bg-surface px-3 text-xs text-text outline-none focus:border-navy focus:ring-1 focus:ring-navy font-semibold"
               />

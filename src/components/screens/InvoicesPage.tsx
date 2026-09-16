@@ -7,6 +7,7 @@ import { financeQueryKeys } from '../../services/api/financeQueries';
 import { financeService } from '../../services/api/financeService';
 import { Button } from '../shared/Button';
 import { ModalDialog } from '../shared/ModalDialog';
+import { NumberInput } from '../shared/NumberInput';
 import { Select } from '../shared/Select';
 import { Table, type Column } from '../shared/Table';
 
@@ -67,7 +68,7 @@ export const InvoicesPage: FC = () => {
 
     setSubmitting(true);
     try {
-      const totalNum = Number(form.total_amount) || 0;
+      const totalNum = Number(String(form.total_amount).replace(/,/g, '')) || 0;
       const res = await financeService.createInvoice({
         client_id: Number(form.client_id),
         service_id: Number(form.service_id),
@@ -229,10 +230,9 @@ export const InvoicesPage: FC = () => {
             <label className="block text-xs font-semibold text-text mb-1">
               Total Amount (₦) <span className="text-red-500">*</span>
             </label>
-            <input
-              type="number"
+            <NumberInput
               value={form.total_amount}
-              onChange={(e) => setForm((p) => ({ ...p, total_amount: e.target.value }))}
+              onChange={(value) => setForm((p) => ({ ...p, total_amount: value }))}
               placeholder="0.00"
               className="h-9 w-full rounded-xl border border-border bg-surface px-3 text-xs font-bold text-text outline-none focus:border-navy focus:ring-1 focus:ring-navy"
             />

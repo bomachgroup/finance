@@ -16,3 +16,4 @@ export * from './StatePanel';
 export * from './TabBar';
 export * from './Table';
 export * from './Topbar';
+export * from './NumberInput';
