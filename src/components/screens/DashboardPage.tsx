@@ -130,7 +130,7 @@ export const DashboardPage: FC = () => {
           />
           <KCard
             label="Cash Accounts"
-            value={summary.cash_runway_days ? `${formatNumber(Number(summary.cash_runway_days))} Days Runway` : `${accounts.length} Active Accounts`}
+            value={summary.cash_runway_days ? `${formatNumber(Number(summary.cash_runway_days))} Days Runway` : `${formatNumber(accounts.length)} Active Accounts`}
             icon="ti-wallet"
             color="navy"
             subtext="Treasury & Vault Positions"
