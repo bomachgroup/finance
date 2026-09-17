@@ -46,22 +46,7 @@ function isLiveShellOrigin(originOrUrl: string): boolean {
 }
 
 export function getApiBaseUrl(): string {
-  if (customApiBaseUrl) return customApiBaseUrl;
-
   if (typeof window !== 'undefined') {
-    const searchParams = extractSearchParams();
-    const override = searchParams.get('apiBaseUrl') || searchParams.get('backendUrl') || searchParams.get('apiUrl');
-    if (override) {
-      const clean = override.trim().replace(/\/+$/, '').replace(/\/api\/v1\/?$/, '');
-      setApiBaseUrl(clean);
-      return clean;
-    }
-
-    try {
-      const stored = sessionStorage.getItem('bomach_finances_api_base') || localStorage.getItem('bomach_finances_api_base');
-      if (stored) return stored.trim().replace(/\/+$/, '').replace(/\/api\/v1\/?$/, '');
-    } catch {}
-
     const hostname = window.location.hostname.toLowerCase();
     const referrer = (document.referrer || '').toLowerCase();
 
@@ -84,10 +69,33 @@ export function getApiBaseUrl(): string {
       return 'https://bomachauth.bgbot.app';
     }
 
-    // 2. On standalone Vercel deployments, use same-origin relative URLs to proxy through vercel.json rewrite (targeting test backend)
+    // 2. On Vercel deployments (unless in live shell), ALWAYS use same-origin relative URLs ("")
+    // to proxy through vercel.json rewrite (targeting test backend).
+    // The backend does not whitelist vercel.app in CORS headers for finance,
+    // so any cross-origin fetch from vercel.app directly to bgbot.app will fail with "Failed to fetch".
     if (hostname.includes('vercel.app')) {
+      try {
+        sessionStorage.removeItem('bomach_finances_api_base');
+        localStorage.removeItem('bomach_finances_api_base');
+      } catch {}
+      customApiBaseUrl = null;
       return '';
     }
+
+    if (customApiBaseUrl) return customApiBaseUrl;
+
+    const searchParams = extractSearchParams();
+    const override = searchParams.get('apiBaseUrl') || searchParams.get('backendUrl') || searchParams.get('apiUrl');
+    if (override) {
+      const clean = override.trim().replace(/\/+$/, '').replace(/\/api\/v1\/?$/, '');
+      setApiBaseUrl(clean);
+      return clean;
+    }
+
+    try {
+      const stored = sessionStorage.getItem('bomach_finances_api_base') || localStorage.getItem('bomach_finances_api_base');
+      if (stored) return stored.trim().replace(/\/+$/, '').replace(/\/api\/v1\/?$/, '');
+    } catch {}
 
     // 3. In all other cases (localhost, test shell, default fallback), use test backend
     return 'https://bomachauthtest.bgbot.app';
