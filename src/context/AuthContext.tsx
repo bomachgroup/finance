@@ -152,21 +152,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [twoFactorToken, setTwoFactorToken] = useState<string | null>(null);
 
   const fetchUserRoleAndPermissions = useCallback(async (userProfile: UserProfile) => {
+    const isSuperOrCeo = Boolean(
+      (userProfile as any)?.is_superuser === true ||
+      (userProfile as any)?.is_staff === true ||
+      `${userProfile.role || ''} ${userProfile.email || ''} ${userProfile.username || ''}`
+        .toLowerCase()
+        .match(/ceo|founder|admin|super|tochukwu|anigbo|director|executive/),
+    );
+
     try {
       let roleName = userProfile.role || '';
       let extracted: Record<string, string[]> = {};
 
       const roleRes = await authService.getUserRole(userProfile.id).catch(() => null);
       if (roleRes?.data) {
-        setUserRole(roleRes.data);
-        extracted = roleRes.data.permissions || {};
-        if (roleRes.data.name) roleName = roleRes.data.name;
+        const roleObj = Array.isArray(roleRes.data) ? roleRes.data[0] : roleRes.data;
+        if (roleObj) {
+          setUserRole(roleObj);
+          extracted = roleObj.permissions || {};
+          if (roleObj.name) roleName = roleObj.name;
+        }
+      }
+
+      if (isSuperOrCeo) {
+        extracted = { ...extracted, '*': ['*'], all: ['*'] };
+        if (!roleName) roleName = 'CEO / Founder';
       }
 
       setPermissions(extracted);
       const activeRole = mapRoleNameToKey(roleName, '', userProfile.email, userProfile);
       setCurrentRole(activeRole);
     } catch {
+      const fallbackPermissions = isSuperOrCeo ? { '*': ['*'], all: ['*'] } : {};
+      setPermissions(fallbackPermissions);
       const activeRole = mapRoleNameToKey('', '', userProfile.email, userProfile);
       setCurrentRole(activeRole);
     }
@@ -512,6 +530,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const isSuperUser =
       (user as any)?.is_superuser === true ||
       (user as any)?.is_staff === true ||
+      currentRole === 'ceo' ||
+      Boolean(
+        user?.role &&
+          typeof user.role === 'string' &&
+          user.role.toLowerCase().match(/ceo|founder|admin|super|tochukwu|anigbo|director|executive/),
+      ) ||
       Boolean(permissions['*']) ||
       Boolean(permissions.all) ||
       Boolean(permissions['all']) ||
