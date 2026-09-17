@@ -179,7 +179,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       const searchParams = extractSearchParams();
       const tokenFromUrl = searchParams.get('token') || searchParams.get('access_token');
-      const refreshTokenFromUrl = searchParams.get('refresh_token');
+      const refreshTokenFromUrl = searchParams.get('refresh_token') || searchParams.get('refreshToken');
       const fullNameFromUrl = searchParams.get('fullName') || searchParams.get('name');
       const emailFromUrl = searchParams.get('email');
       const apiBaseFromUrl = searchParams.get('apiBaseUrl') || searchParams.get('backendUrl') || searchParams.get('apiUrl');

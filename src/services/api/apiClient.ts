@@ -35,15 +35,17 @@ export function setApiBaseUrl(url: string) {
   } catch {}
 }
 
-export function getApiBaseUrl(): string {
-  if (typeof window !== 'undefined') {
-    const hostname = window.location.hostname.toLowerCase();
-    // 1. On Vercel deployments, always use same-origin relative URLs so requests proxy through Vercel rewrites without CORS restrictions
-    if (hostname.includes('vercel.app')) {
-      return '';
-    }
-  }
+function isLiveShellOrigin(originOrUrl: string): boolean {
+  const lower = originOrUrl.toLowerCase();
+  return (
+    lower.includes('bomachosapp') ||
+    lower.includes('bomach-os-app') ||
+    lower.includes('bomachauthapp') ||
+    lower.includes('bomachauth.bgbot.app')
+  );
+}
 
+export function getApiBaseUrl(): string {
   if (customApiBaseUrl) return customApiBaseUrl;
 
   if (typeof window !== 'undefined') {
@@ -60,39 +62,34 @@ export function getApiBaseUrl(): string {
       if (stored) return stored.trim().replace(/\/+$/, '').replace(/\/api\/v1\/?$/, '');
     } catch {}
 
+    const hostname = window.location.hostname.toLowerCase();
     const referrer = (document.referrer || '').toLowerCase();
 
-    // 2. Explicit test environments -> test backend
-    const isTestEnvironment =
-      hostname.includes('bomach-os-test') ||
-      hostname.includes('-test.web.app') ||
-      referrer.includes('bomach-os-test') ||
-      hostname === 'localhost' ||
-      hostname === '127.0.0.1' ||
-      hostname === '[::1]' ||
-      hostname.endsWith('.local');
+    // 1. The ONLY time live backend is used is when viewing from the live shell
+    let isLiveEnvironment = isLiveShellOrigin(hostname) || isLiveShellOrigin(referrer);
 
-    if (isTestEnvironment) {
-      return 'https://bomachauthtest.bgbot.app';
-    }
+    try {
+      const ancestors = (window.location as any).ancestorOrigins;
+      if (ancestors && ancestors.length > 0) {
+        for (let i = 0; i < ancestors.length; i++) {
+          if (isLiveShellOrigin(ancestors[i])) {
+            isLiveEnvironment = true;
+            break;
+          }
+        }
+      }
+    } catch {}
 
-    // 3. Production app environments
-    const isProdAppEnvironment =
-      hostname.includes('bomach-os-app') ||
-      referrer.includes('bomach-os-app') ||
-      hostname === 'bomachauth.bgbot.app';
-
-    if (isProdAppEnvironment) {
+    if (isLiveEnvironment) {
       return 'https://bomachauth.bgbot.app';
     }
-  }
 
-  const envUrl = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.trim();
-  if (envUrl) {
-    return envUrl.replace(/\/+$/, '');
-  }
+    // 2. On standalone Vercel deployments, use same-origin relative URLs to proxy through vercel.json rewrite (targeting test backend)
+    if (hostname.includes('vercel.app')) {
+      return '';
+    }
 
-  if (import.meta.env.DEV) {
+    // 3. In all other cases (localhost, test shell, default fallback), use test backend
     return 'https://bomachauthtest.bgbot.app';
   }
 
