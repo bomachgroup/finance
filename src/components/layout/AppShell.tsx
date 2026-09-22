@@ -16,6 +16,7 @@ import { NumberInput } from '../shared/NumberInput';
 import { SkeletonCard, SkeletonKpiGrid, SkeletonTable } from '../shared/Skeletons';
 import { NoPermissionPage } from './NoPermissionPage';
 import { Sidebar } from './Sidebar';
+import { shouldLoadQuickActionData } from './quickActionQueries';
 
 
 function AppRouteSkeleton() {
@@ -72,12 +73,14 @@ export const AppShell: FC<{ children?: ReactNode }> = ({ children }) => {
   const { data: invoicesRes } = useQuery({
     queryKey: financeQueryKeys.invoices({ limit: 50 }),
     queryFn: () => financeService.listInvoices({ limit: 50 }),
+    enabled: shouldLoadQuickActionData(activeModal, 'invoices'),
   });
   const invoices = extractApiItems<Record<string, any>>(invoicesRes?.data);
 
   const { data: accountsRes } = useQuery({
     queryKey: financeQueryKeys.accounts(),
     queryFn: () => financeService.listAccounts(),
+    enabled: shouldLoadQuickActionData(activeModal, 'accounts'),
   });
   const accounts = extractApiItems<Record<string, any>>(accountsRes?.data);
 

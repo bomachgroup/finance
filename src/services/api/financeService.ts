@@ -648,12 +648,7 @@ export interface FinanceSettings {
 export const financeService = {
   // --- 1. Command Center & Metrics ---
   getCommandCenter: async () => {
-    const res = await apiRequest<CommandCenterMetrics>('/api/v1/finance/command-center');
-    if (res.error || res.status === 404 || res.status === 401 || res.status === 403) {
-      const fallback = await apiRequest<CommandCenterMetrics>('/api/v1/revenue-execution/command-center');
-      if (!fallback.error) return fallback;
-    }
-    return res;
+    return apiRequest<CommandCenterMetrics>('/api/v1/finance/command-center');
   },
 
   // --- 2. Accounts & General Ledger ---
@@ -799,16 +794,9 @@ export const financeService = {
 
   // --- 5. Cash Flow ---
   getCashFlowForecast: async (params?: { forecast_months?: number }) => {
-    const res = await apiRequest<CashFlowForecast>(
+    return apiRequest<CashFlowForecast>(
       `/api/v1/finance/cash-flow/forecast${buildQueryString(params)}`,
     );
-    if (res.error || res.status === 404 || res.status === 401 || res.status === 403) {
-      const fallback = await apiRequest<CashFlowForecast>(
-        `/api/v1/revenue-execution/forecast${buildQueryString(params)}`,
-      );
-      if (!fallback.error) return fallback;
-    }
-    return res;
   },
 
   // --- 6. Invoices & Receivables ---
@@ -820,7 +808,7 @@ export const financeService = {
 
   listClients: async (params?: PaginationParams) => {
     const res = await apiRequest<any>(`/api/v1/clients/clients/${buildQueryString(params)}`);
-    if (res.error || res.status === 404) {
+    if (res.status === 404) {
       return apiRequest<any>(`/api/v1/clients/admin/clients${buildQueryString(params)}`);
     }
     return res;

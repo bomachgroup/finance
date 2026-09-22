@@ -1,6 +1,7 @@
 import React from 'react';
 import { SkeletonTable } from './Skeletons';
 import { ErrorState } from './StatePanel';
+import type { FinanceErrorKind } from '../../services/api/financeErrorState';
 
 export interface Column<T> {
   key: string;
@@ -19,6 +20,7 @@ interface TableProps<T> {
   emptyMessage?: string;
   emptySubtitle?: string;
   error?: string;
+  errorKind?: FinanceErrorKind;
   onRetry?: () => void;
   onRowClick?: (row: T) => void;
   className?: string;
@@ -32,6 +34,7 @@ export function Table<T extends Record<string, any>>({
   emptyMessage = 'No records found',
   emptySubtitle = 'Try adjusting your search query or filters',
   error,
+  errorKind = 'generic',
   onRetry,
   onRowClick,
   className = '',
@@ -43,7 +46,7 @@ export function Table<T extends Record<string, any>>({
   }
 
   if (error) {
-    return <ErrorState message={error} onRetry={onRetry} />;
+    return <ErrorState kind={errorKind} message={error} onRetry={onRetry} />;
   }
 
   if (!data || data.length === 0) {

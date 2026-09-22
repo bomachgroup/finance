@@ -3,6 +3,7 @@ import type { FC } from 'react';
 import { extractApiItems, formatDisplayLabel } from '../../data/helpers';
 import { financeQueryKeys } from '../../services/api/financeQueries';
 import { financeService } from '../../services/api/financeService';
+import { getFinanceErrorKind } from '../../services/api/financeErrorState';
 import { Table, type Column } from '../shared/Table';
 
 export const EstateFinancePage: FC = () => {
@@ -80,6 +81,7 @@ export const EstateFinancePage: FC = () => {
         data={invoices}
         loading={isLoading}
         error={invoicesRes?.error}
+        errorKind={getFinanceErrorKind(invoicesRes?.status)}
         onRetry={() => void refetch()}
         emptyTitle="No estate invoices found"
         emptySubtitle="Property sales installments and infrastructure levy billings will display here."

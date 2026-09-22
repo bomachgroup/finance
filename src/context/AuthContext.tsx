@@ -183,7 +183,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const activeRole = mapRoleNameToKey(roleName, '', userProfile.email, userProfile);
       setCurrentRole(activeRole);
     } catch {
-      const fallbackPermissions = isSuperOrCeo ? { '*': ['*'], all: ['*'] } : {};
+      const fallbackPermissions: Record<string, string[]> = isSuperOrCeo
+        ? { '*': ['*'], all: ['*'] }
+        : {};
       setPermissions(fallbackPermissions);
       const activeRole = mapRoleNameToKey('', '', userProfile.email, userProfile);
       setCurrentRole(activeRole);

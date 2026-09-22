@@ -8,7 +8,8 @@
     "preview": "vite preview --host 127.0.0.1",
     "typecheck": "tsc -b",
     "lint": "oxlint src vite.config.ts tailwind.config.ts",
-    "test": "node tools/finance-smoke.mjs"
+    "test": "node tools/finance-smoke.mjs",
+    "test:run": "vitest run"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.101.4",
@@ -22,11 +23,15 @@
     "@types/react": "latest",
     "@types/react-dom": "latest",
     "@vitejs/plugin-react": "latest",
+    "@testing-library/jest-dom": "^6.8.0",
+    "@testing-library/react": "^16.3.0",
     "autoprefixer": "latest",
+    "jsdom": "^26.1.0",
     "oxlint": "latest",
     "postcss": "latest",
     "tailwindcss": "^3.4.17",
     "typescript": "latest",
+    "vitest": "^3.2.7",
     "vite": "latest"
   }
 }

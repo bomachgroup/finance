@@ -21,6 +21,7 @@ export interface ErrorStateProps {
   onRetry?: () => void;
   compact?: boolean;
   className?: string;
+  kind?: 'unauthorized' | 'forbidden' | 'unsupported' | 'network' | 'generic';
 }
 
 export interface EmptyStateProps {
@@ -142,11 +143,20 @@ export function EmptyState({ title, description, subtitle, action, actionLabel, 
   );
 }
 
-export function ErrorState({ message, onRetry, compact = false, className = '' }: ErrorStateProps) {
+export function ErrorState({ message, onRetry, compact = false, className = '', kind = 'generic' }: ErrorStateProps) {
+  const title = kind === 'unauthorized'
+    ? 'Your session has expired'
+    : kind === 'forbidden'
+      ? 'You do not have access to this page'
+      : kind === 'unsupported'
+      ? 'This capability is unavailable'
+      : kind === 'network'
+        ? 'Could not load data'
+        : 'Could not load data';
   return (
     <StatePanel
       type="error"
-      title="Could not load data"
+      title={title}
       description={message}
       compact={compact}
       className={className}
@@ -164,4 +174,3 @@ export function ErrorState({ message, onRetry, compact = false, className = '' }
     />
   );
 }
-
