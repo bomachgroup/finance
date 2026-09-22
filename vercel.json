@@ -1,6 +1,10 @@
 {
   "rewrites": [
     {
+      "source": "/api/live/api/:path*",
+      "destination": "https://bomachauth.bgbot.app/api/:path*"
+    },
+    {
       "source": "/api/:path*",
       "destination": "https://bomachauthtest.bgbot.app/api/:path*"
     },

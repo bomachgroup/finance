@@ -66,7 +66,11 @@ export function getApiBaseUrl(): string {
     } catch {}
 
     if (isLiveEnvironment) {
-      return 'https://bomachauth.bgbot.app';
+      // This app is hosted on Vercel and embedded by the live BOMACH shell.
+      // Route through the Vercel rewrite so the browser makes a same-origin
+      // request; the backend currently does not allow the Finance origin in
+      // CORS. Vercel forwards this path to the live API.
+      return '/api/live';
     }
 
     // 2. On Vercel deployments (unless in live shell), ALWAYS use same-origin relative URLs ("")
