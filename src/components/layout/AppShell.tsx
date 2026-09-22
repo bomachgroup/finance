@@ -121,7 +121,11 @@ export const AppShell: FC<{ children?: ReactNode }> = ({ children }) => {
     }
   }, [location.pathname]);
 
-  if (isLoading && !isEmbed) {
+  // Embedded sessions arrive asynchronously from the BOMACH host. Keep the
+  // route guard behind the loading state until both the session and its
+  // permissions have been restored; an empty initial permission map is not a
+  // denial decision.
+  if (isLoading || (isEmbed && !isLoggedIn)) {
     return <AuthLoadingSkeleton />;
   }
 

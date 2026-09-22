@@ -345,6 +345,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         if (incomingToken) {
+          // The host token may replace the initial empty session. Hold the
+          // app behind its auth loading state while profile and permissions
+          // are resolved, so route guards don't briefly deny every page.
+          setIsLoading(true);
           setAccessToken(incomingToken);
           if (incomingRefreshToken) {
             setRefreshToken(incomingRefreshToken);
