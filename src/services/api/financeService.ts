@@ -270,6 +270,8 @@ export interface FinanceExpense {
   stage?: string;
   is_billable?: boolean;
   branch_id?: number;
+  survey_expense_line_id?: number | string | null;
+  survey_report_version?: number | null;
   project_id?: number;
   order_id?: number;
   amount: number;

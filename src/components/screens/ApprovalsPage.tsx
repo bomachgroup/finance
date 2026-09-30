@@ -91,6 +91,16 @@ export const ApprovalsPage: FC = () => {
       ),
     },
     {
+      key: 'report_audit',
+      header: 'Report Audit',
+      render: (item) => item.engineering_expense_line_id || item.survey_expense_line_id ? (
+        <div className="text-[11px] text-text-2">
+          <div>{item.survey_expense_line_id ? 'Survey' : 'Engineering'} line #{item.survey_expense_line_id ?? item.engineering_expense_line_id}</div>
+          <div className="text-text-3">Submission v{item.survey_report_version ?? item.engineering_report_version ?? '—'}</div>
+        </div>
+      ) : <span className="text-text-3">—</span>,
+    },
+    {
       key: 'actions',
       header: 'Decision',
       align: 'right',
