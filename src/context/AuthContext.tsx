@@ -138,8 +138,39 @@ function mapRoleNameToKey(roleName?: string, position?: string, email?: string, 
     return 'client';
   }
 
-  // Any authenticated user accessing the finance console defaults to CFO/Executive access
-  return 'cfo';
+  return 'staff';
+}
+
+export function hasFinancePermission(
+  resource: string,
+  action: string,
+  permissions: Record<string, string[]>,
+): boolean {
+  const cleanRes = resource.toLowerCase().replace(/^\//, '').replace(/-/g, '_');
+  const candidates = Array.from(
+    new Set([
+      cleanRes,
+      resource,
+      ...(SCREEN_TO_RESOURCE_MAP[cleanRes] || []),
+      ...(SCREEN_TO_RESOURCE_MAP[resource] || []),
+    ]),
+  );
+
+  for (const key of candidates) {
+    if (!Object.prototype.hasOwnProperty.call(permissions, key)) continue;
+    const granted = permissions[key];
+    if (!Array.isArray(granted) || granted.length === 0) return false;
+    const requested = action.toLowerCase();
+    if (requested === 'view' || requested === 'read') {
+      return granted.some((permission) =>
+        ['view', 'read', 'get', 'list', 'access', '*', 'all', 'manage'].includes(permission),
+      );
+    }
+    return granted.some((permission) =>
+      [requested, '*', 'all', 'manage'].includes(permission),
+    );
+  }
+  return false;
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -154,14 +185,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [twoFactorToken, setTwoFactorToken] = useState<string | null>(null);
 
   const fetchUserRoleAndPermissions = useCallback(async (userProfile: UserProfile) => {
-    const isSuperOrCeo = Boolean(
-      (userProfile as any)?.is_superuser === true ||
-      (userProfile as any)?.is_staff === true ||
-      `${userProfile.role || ''} ${userProfile.email || ''} ${userProfile.username || ''}`
-        .toLowerCase()
-        .match(/ceo|founder|admin|super|tochukwu|anigbo|director|executive/),
-    );
-
     try {
       let roleName = userProfile.role || '';
       let extracted: Record<string, string[]> = {};
@@ -176,18 +199,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       }
 
-      if (isSuperOrCeo) {
-        extracted = { ...extracted, '*': ['*'], all: ['*'] };
-        if (!roleName) roleName = 'CEO / Founder';
-      }
-
       setPermissions(extracted);
       const activeRole = mapRoleNameToKey(roleName, '', userProfile.email, userProfile);
       setCurrentRole(activeRole);
     } catch {
-      const fallbackPermissions: Record<string, string[]> = isSuperOrCeo
-        ? { '*': ['*'], all: ['*'] }
-        : {};
+      const fallbackPermissions: Record<string, string[]> = {};
       setPermissions(fallbackPermissions);
       const activeRole = mapRoleNameToKey('', '', userProfile.email, userProfile);
       setCurrentRole(activeRole);
@@ -539,67 +555,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const hasPermission = (resource: string, action = 'view'): boolean => {
-    const isSuperUser =
-      (user as any)?.is_superuser === true ||
-      (user as any)?.is_staff === true ||
-      currentRole === 'ceo' ||
-      Boolean(
-        user?.role &&
-          typeof user.role === 'string' &&
-          user.role.toLowerCase().match(/ceo|founder|admin|super|tochukwu|anigbo|director|executive/),
-      ) ||
-      Boolean(permissions['*']) ||
-      Boolean(permissions.all) ||
-      Boolean(permissions['all']) ||
-      Boolean(permissions['admin']);
-
-    if (isSuperUser) {
-      return true;
-    }
-
-    const cleanRes = resource.toLowerCase().replace(/^\//, '').replace(/-/g, '_');
-    const candidates = Array.from(
-      new Set([
-        cleanRes,
-        resource,
-        ...(SCREEN_TO_RESOURCE_MAP[cleanRes] || []),
-        ...(SCREEN_TO_RESOURCE_MAP[resource] || []),
-      ]),
-    );
-
-    const hasBackendPermissions = Object.keys(permissions).length > 0;
-    if (!hasBackendPermissions) {
-      return false;
-    }
-
-    for (const key of candidates) {
-      if (Object.prototype.hasOwnProperty.call(permissions, key)) {
-        const val = permissions[key];
-        if (Array.isArray(val)) {
-          if (val.length === 0) return false;
-          const act = action.toLowerCase();
-          if (act === 'view' || act === 'read') {
-            return (
-              val.includes('view') ||
-              val.includes('read') ||
-              val.includes('get') ||
-              val.includes('list') ||
-              val.includes('access') ||
-              val.includes('*') ||
-              val.includes('all') ||
-              val.includes('manage')
-            );
-          }
-          return val.includes(act) || val.includes('*') || val.includes('all') || val.includes('manage');
-        }
-        if (typeof val === 'boolean') {
-          return val;
-        }
-      }
-    }
-    return false;
-  };
+  const hasPermission = (resource: string, action = 'view'): boolean =>
+    hasFinancePermission(resource, action, permissions);
 
   const getFirstAccessibleScreen = useCallback((): string => {
     return firstAccessibleScreen(currentRole, permissions, hasPermission) || 'dashboard';
