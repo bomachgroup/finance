@@ -3,6 +3,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useRef,
   useState,
   type ReactNode,
 } from 'react';
@@ -142,6 +143,7 @@ function mapRoleNameToKey(roleName?: string, position?: string, email?: string, 
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const lastHostAuthTokenRef = useRef<string | null>(null);
   const [user, setUser] = useState<UserProfile | null>(null);
   const [userRole, setUserRole] = useState<UserRoleResponse | null>(null);
   const [employeeDetails, setEmployeeDetails] = useState<EmployeeDetailsResponse | null>(null);
@@ -346,7 +348,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setApiBaseUrl(String(incomingApiBase));
         }
 
-        if (incomingToken) {
+        if (incomingToken && incomingToken !== lastHostAuthTokenRef.current) {
+          // The host retries token delivery while the iframe boots. Ignore
+          // duplicate messages so auth loading and profile/role requests do
+          // not restart each time.
+          lastHostAuthTokenRef.current = incomingToken;
           // The host token may replace the initial empty session. Hold the
           // app behind its auth loading state while profile and permissions
           // are resolved, so route guards don't briefly deny every page.
@@ -521,6 +527,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await authService.logout();
     } finally {
+      lastHostAuthTokenRef.current = null;
       setUser(null);
       setUserRole(null);
       setEmployeeDetails(null);
